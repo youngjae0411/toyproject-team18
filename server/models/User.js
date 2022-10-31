@@ -23,6 +23,7 @@ const userSchema = mongoose.Schema({
 });
 
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 userSchema.pre("save", function (next) {
   var user = this;
@@ -41,6 +42,25 @@ userSchema.pre("save", function (next) {
     next();
   }
 });
+
+userSchema.methods.comparePassword = function (plainPassword, cb) {
+  bcrypt.compare(plainPassword, this.password, function (err, isMatch) {
+    if (err) return cb(err);
+    cb(null, isMatch);
+  });
+};
+
+
+userSchema.methods.generateToken = function (cb) {
+  var user = this;
+  var token = jwt.sign(user._id.toHexString(), "createToken");
+
+  user.token = token;
+  user.save(function (err, user) {
+    if (err) return cb();
+    cb(null, user);
+  });
+};
 
 const User = mongoose.model("User", userSchema);
 

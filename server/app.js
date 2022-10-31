@@ -36,3 +36,32 @@ app.post("/api/users/register", (req, res) => {
       : res.status(200).json({ success: true, userInfo: userInfo });
   });
 });
+
+app.post("/api/users/login", (req, res) => {
+  // DB에서 요청한 Email 찾기
+  User.findOne({ Id: req.body.Id }, (err, user) => {
+    if (!user) {
+      return res.json({
+        loginSuccess: false,
+        message: "아이디를 다시 확인하세요.",
+      });
+    }
+    // DB에서 요청한 Email이 있다면 비밀번호가 같은지 확인
+    user.comparePassword(req.body.password, (err, isMatch) => {
+      if (!isMatch)
+        return res.json({
+          loginSuccess: false,
+          message: "비밀번호가 틀렸습니다",
+        });
+      // 비밀 번호가 같다면 Token 생성
+      user.generateToken((err, user) => {
+        if (err) return res.status(400).send(err);
+        // 생성된 토큰을 쿠키에 저장
+        res
+          .cookie("hasVisited", user.token)
+          .status(200)
+          .json({ loginSuccess: true, userId: user._id });
+      });
+    });
+  });
+});
