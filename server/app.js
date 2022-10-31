@@ -5,6 +5,9 @@ const app = express()
 const port = process.env.PORT
 const mongoose = require("mongoose");
 
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
@@ -25,6 +28,8 @@ mongoose
   .catch((err) => console.log(err));
 
 const { User } = require('./models/User');
+const { auth } = require('./middleware/auth')
+
 
 
 app.post("/api/users/register", (req, res) => {
@@ -62,6 +67,25 @@ app.post("/api/users/login", (req, res) => {
           .status(200)
           .json({ loginSuccess: true, userId: user._id });
       });
+    });
+  });
+});
+
+app.get("/api/users/auth", auth, (req, res) => {
+  res.status(200).json({
+    _id: req.user._id,
+    Id: req.user.Id,
+    name: req.user.name,
+    isAuth: true,
+  });
+});
+
+app.get("/api/users/logout", auth, (req, res) => {
+  User.findOneAndUpdate({ _id: req.user._id }, { token: "" }, (err, user) => {
+    if (err) return res.json({ success: false, err });
+    return res.status(200).send({
+      success: true,
+      logout: "로그아웃 성공!",
     });
   });
 });

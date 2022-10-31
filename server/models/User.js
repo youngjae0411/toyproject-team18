@@ -8,11 +8,13 @@ const userSchema = mongoose.Schema({
     },
     password: {
         type: String,
-        minlength: 5
+        minlength: 5,
+        required: true
     },
     name: {
         type: String,
-        maxlength: 100
+        maxlength: 100,
+        required: true
     },
     token: {
         type: String
@@ -59,6 +61,17 @@ userSchema.methods.generateToken = function (cb) {
   user.save(function (err, user) {
     if (err) return cb();
     cb(null, user);
+  });
+};
+
+userSchema.statics.findByToken = function (token, cb) {
+  var user = this;
+
+  jwt.verify(token, "createToken", function (err, decoded) {
+    user.findOne({ _id: decoded, token: token }, function (err, user) {
+      if (err) return cb(err);
+      cb(null, user);
+    });
   });
 };
 
